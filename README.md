@@ -23,7 +23,7 @@ You have to pass the XML model file path and the number of features used by the 
 ### Note about options
 
 For some TMVA trainings, the response needs to be normalized by the number of trees. This can be enables with the `--norm` options.
-Sometimes, one also has to get the score from the `purity` XML attribute instead of the one names `res`. This can be done with the `--do-purity` option.
+Sometimes, one also has to get the score from the `purity` XML attribute instead of the one names `res`. This can be done with the `--use_purity` option.
 
 Some TMVA trainings also have a different boosting weight for each tree. these trainings are not supported by XGBoost.
 
