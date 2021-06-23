@@ -7,7 +7,7 @@ C++ executable to convert a TMVA BDT model stored in an XML file to a XGBoost JS
 The tmva2xgboost script has no dependencies other than the C++ standard library.
 
 ```bash
-g++ -o tmva2xgboost tmva2xgboost.cpp
+g++ -o tmva2xgboost -lboost_program_options tmva2xgboost.cpp
 ```
 
 ## Usage
@@ -15,8 +15,21 @@ g++ -o tmva2xgboost tmva2xgboost.cpp
 You have to pass the XML model file path and the number of features used by the model, for example:
 
 ```bash
-./tmva2xgboost model.weights.xml 22 > model.json
+./tmva2xgboost --input model.weights.xml --n_features 22 > model.json
 ```
+
+**Always validate your converted XGBoost model before using it in production!**
+
+### Note about options
+
+For some TMVA trainings, the response needs to be normalized by the number of trees. This can be enables with the `--norm` options.
+Sometimes, one also has to get the score from the `purity` XML attribute instead of the one names `res`. This can be done with the `--do-purity` option.
+
+Some TMVA trainings also have a different boosting weight for each tree. these trainings are not supported by XGBoost.
+
+### Note about sub-methods
+
+It can also happen that a TMVA weight file contains multiple BDTs. You have to split it up manually in individual XML files with the correct structure. Please keep in mind that the numer of features can be different for each sub-method.
 
 ## Testing and validation
 

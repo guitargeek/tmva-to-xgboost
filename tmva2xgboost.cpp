@@ -5,6 +5,7 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <boost/program_options.hpp>
 
 struct SlowTreeNode {
     bool isLeaf = false;
@@ -53,7 +54,7 @@ class XMLAttributes {
             return setValue(IVar_, std::stoi(value));
         if (name == "Cut")
             return setValue(Cut_, std::stod(value));
-        if (name == "res")
+        if (usePurity ? name == "purity" : name == "res")
             return setValue(res_, std::stod(value));
         if (name == "nType")
             return setValue(nType_, std::stoi(value));
@@ -73,7 +74,7 @@ class XMLAttributes {
             return IVar_.has_value();
         if (name == "Cut")
             return Cut_.has_value();
-        if (name == "res")
+        if (usePurity ? name == "purity" : name == "res")
             return res_.has_value();
         if (name == "nType")
             return nType_.has_value();
@@ -100,6 +101,8 @@ class XMLAttributes {
         nType_.reset();
     }
 
+    static bool usePurity;
+
   private:
     template <class T>
     bool setValue(std::optional<T>& member, T const& value) {
@@ -120,14 +123,15 @@ class XMLAttributes {
     std::optional<double> Cut_ = std::nullopt;
     std::optional<double> res_ = std::nullopt;
     std::optional<int> nType_ = std::nullopt;
+
 };
+
+bool XMLAttributes::usePurity = false;
 
 struct BDTWithXMLAttributes {
     std::vector<double> boostWeights;
     std::vector<std::vector<XMLAttributes>> nodes;
 };
-
-BDTWithXMLAttributes readXMLFile(std::string const& filename);
 
 BDTWithXMLAttributes readXMLFile(std::string const& filename) {
     const std::string str = readFile(filename.c_str());
@@ -276,20 +280,56 @@ namespace {
 }  // namespace
 
 int main(int argc, char** argv) {
-    if (argc != 3) {
-        std::cout << "Please pass a TMVA XML weight file and the number of features." << std::endl;
+
+    namespace po = boost::program_options;
+
+    // Declare the supported options.
+    po::options_description desc("Allowed options");
+    desc.add_options()
+        ("help", "produce help message")
+        ("input", po::value<std::string>(), "input XML file")
+        ("n_features", po::value<int>(), "number of features (please check manually in XML file)")
+        ("base_score", po::value<double>()->default_value(0.0), "initial score of classifier")
+        ("norm", "normalize score by number of trees")
+        ("use_purity", "use \"purity\" instead of \"res\" attribute for score")
+    ;
+
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::notify(vm);
+
+    if (vm.count("help")) {
+        std::cout << desc << "\n";
         return 1;
     }
 
-    const int nFeatures = std::stoi(argv[2]);
-    const float base_score = 0.0;
+    if (!vm.count("input")) {
+        std::cout << "No input file given. Please specify with --input.\n";
+        return 1;
+    }
 
-    SlowForest forest = load_tmva_xml_to_slowforest(argv[1]);
+    if (!vm.count("n_features")) {
+        std::cout << "No number of features given. Please specify with --n_features.\n";
+        return 1;
+    }
+
+    const std::string inputFile = vm["input"].as<std::string>();
+    const int nFeatures = vm["n_features"].as<int>();
+    const double base_score = vm["base_score"].as<double>();
+    const bool do_norm = vm.count("norm");
+
+    if(vm.count("use_purity")) {
+        XMLAttributes::usePurity = true;
+    }
+
+    SlowForest forest = load_tmva_xml_to_slowforest(inputFile);
+
+    auto nTrees = forest.size();
 
     std::cout << "{\"learner\":{\"attributes\":{},\"feature_names\":[],\"feature_types\":[],\"gradient_booster\":{"
                  "\"model\":{\"gbtree_model_param\":{\"num_trees\":\""
-              << forest.size() << "\",\"size_leaf_vector\":\"0\"}," << std::endl;
-    printZerosInt(forest.size(), "tree_info");
+              << nTrees << "\",\"size_leaf_vector\":\"0\"}," << std::endl;
+    printZerosInt(nTrees, "tree_info");
     std::cout << "\"trees\":" << std::endl;
 
     int iTree = 0;
@@ -329,7 +369,8 @@ int main(int argc, char** argv) {
                 parents[node.no] = i;
             }
             right_children[i] = node.no;
-            split_conditions[i] = node.isLeaf ? node.leafValue : node.cutValue;
+            split_conditions[i] = node.isLeaf ? (do_norm ? node.leafValue / static_cast<double>(nTrees) : node.leafValue)
+                                              : node.cutValue;
             split_indices[i] = std::max(node.cutIndex, 0);
         }
 
