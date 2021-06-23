@@ -54,8 +54,10 @@ class XMLAttributes {
             return setValue(IVar_, std::stoi(value));
         if (name == "Cut")
             return setValue(Cut_, std::stod(value));
-        if (usePurity ? name == "purity" : name == "res")
+        if (name == "res")
             return setValue(res_, std::stod(value));
+        if (name == "purity")
+            return setValue(purity_, std::stod(value));
         if (name == "nType")
             return setValue(nType_, std::stoi(value));
         return true;
@@ -74,8 +76,10 @@ class XMLAttributes {
             return IVar_.has_value();
         if (name == "Cut")
             return Cut_.has_value();
-        if (usePurity ? name == "purity" : name == "res")
+        if (name == "res")
             return res_.has_value();
+        if (name == "purity")
+            return purity_.has_value();
         if (name == "nType")
             return nType_.has_value();
         return false;
@@ -88,6 +92,7 @@ class XMLAttributes {
     auto const& IVar() const { return IVar_; };
     auto const& Cut() const { return Cut_; };
     auto const& res() const { return res_; };
+    auto const& purity() const { return purity_; };
     auto const& nType() const { return nType_; };
 
     void reset() {
@@ -98,10 +103,9 @@ class XMLAttributes {
         IVar_.reset();
         Cut_.reset();
         res_.reset();
+        purity_.reset();
         nType_.reset();
     }
-
-    static bool usePurity;
 
   private:
     template <class T>
@@ -122,11 +126,11 @@ class XMLAttributes {
     std::optional<int> IVar_ = std::nullopt;
     std::optional<double> Cut_ = std::nullopt;
     std::optional<double> res_ = std::nullopt;
+    std::optional<double> purity_ = std::nullopt;
     std::optional<int> nType_ = std::nullopt;
 
 };
 
-bool XMLAttributes::usePurity = false;
 
 struct BDTWithXMLAttributes {
     std::vector<double> boostWeights;
@@ -188,7 +192,7 @@ BDTWithXMLAttributes readXMLFile(std::string const& filename) {
 
 namespace {
 
-    std::vector<SlowTreeNode> getSlowTreeNodes(std::vector<XMLAttributes> const& nodes) {
+    std::vector<SlowTreeNode> getSlowTreeNodes(std::vector<XMLAttributes> const& nodes, bool usePurity) {
         std::vector<SlowTreeNode> xgbNodes(nodes.size());
 
         int xgbIndex = 0;
@@ -210,7 +214,7 @@ namespace {
             xgbNode.depth = *node.depth();
             xgbNode.cutIndex = *node.IVar();
             xgbNode.cutValue = *node.Cut();
-            xgbNode.leafValue = *node.res();
+            xgbNode.leafValue = usePurity ? *node.purity() : *node.res();
             if (!xgbNode.isLeaf) {
                 xgbNode.yes = xgbNodes[iNode + 1].index;
                 xgbNode.no = xgbNode.yes + 1;
@@ -224,11 +228,11 @@ namespace {
 
 }  // namespace
 
-SlowForest load_tmva_xml_to_slowforest(std::string const& xmlpath) {
+SlowForest load_tmva_xml_to_slowforest(std::string const& xmlpath, bool usePurity) {
     BDTWithXMLAttributes tmvaXML = readXMLFile(xmlpath);
     std::vector<std::vector<SlowTreeNode>> xgboostForest;
     for (auto const& tree : tmvaXML.nodes) {
-        xgboostForest.push_back(getSlowTreeNodes(tree));
+        xgboostForest.push_back(getSlowTreeNodes(tree, usePurity));
     }
     return xgboostForest;
 }
@@ -318,11 +322,7 @@ int main(int argc, char** argv) {
     const double base_score = vm["base_score"].as<double>();
     const bool do_norm = vm.count("norm");
 
-    if(vm.count("use_purity")) {
-        XMLAttributes::usePurity = true;
-    }
-
-    SlowForest forest = load_tmva_xml_to_slowforest(inputFile);
+    SlowForest forest = load_tmva_xml_to_slowforest(inputFile, vm.count("use_purity"));
 
     auto nTrees = forest.size();
 
