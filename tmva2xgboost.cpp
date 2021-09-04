@@ -241,10 +241,12 @@ namespace {
 
     template <class T>
     void printArray(std::vector<T> const& arr, std::string const& name) {
-        std::cout << "\"" << name << "\":[";
+        std::streamsize ss = std::cout.precision();
         if constexpr (std::is_same<T, double>::value) {
+            std::cout.precision(16);
             std::cout << std::scientific;
         }
+        std::cout << "\"" << name << "\":[";
         int i = 0;
         for (auto const& x : arr) {
             if (i != 0)
@@ -259,6 +261,7 @@ namespace {
         std::cout << "]," << std::endl;
         if constexpr (std::is_same<T, double>::value) {
             std::cout.unsetf(std::ios_base::scientific);
+            std::cout.precision(ss);
         }
     }
 
