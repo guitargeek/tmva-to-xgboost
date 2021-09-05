@@ -4,7 +4,7 @@ C++ executable to convert a TMVA BDT model stored in an XML file to a XGBoost JS
 
 ## Compiling
 
-The tmva2xgboost script has no dependencies other than the C++ standard library.
+The tmva2xgboost script has no dependencies other than the C++ standard library and the [boost libraries](https://www.boost.org/).
 
 ```bash
 g++ -o tmva2xgboost -lboost_program_options tmva2xgboost.cpp
@@ -22,7 +22,7 @@ You have to pass the XML model file path and the number of features used by the 
 
 ### Note about options
 
-For some TMVA trainings, the response needs to be normalized by the number of trees. This can be enables with the `--norm` options.
+For some TMVA trainings, the response needs to be normalized by the number of trees. This can be enabled with the `--norm` options.
 Sometimes, one also has to get the score from the `purity` XML attribute instead of the one names `res`. This can be done with the `--use_purity` option.
 
 Some TMVA trainings also have a different boosting weight for each tree. these trainings are not supported by XGBoost.
@@ -33,13 +33,14 @@ It can also happen that a TMVA weight file contains multiple BDTs. You have to s
 
 ## Testing and validation
 
-To use the testing scripts, copy the `tmva2xgboost` executable into the test directory and change into the test directory.
+The tests are implemented as Python unit tests in the `test` directory.
 
-There is one test that validates the converted XGBoost model at the example of the electron MVA used in CMSSSW. The reference results are produced with the GBForest as in CMSSW, but using random values as input.
-
-In the test directory, you can compile the GBRForest tools and run the comparison as follows (the `tmva2xgboost` executable has to be in the test diretory too):
-
+To run the tests, change into the `test` directory and first compile the `gbrforest` library taken from CMSSSW that is used to produce the reference results in one of the unit tests:
 ```bash
+cd test
 sh compile_gbrforest.sh
-sh run_electron_mva_test.sh
 ```
+
+Now, you can run the unit tests in the `test_*.py` files either py running them individually with Python, or by running `pytest` in the directory (or just `python -m unittest` if `pytest` is not installed).
+
+There are two unit tests that are also useful to see how the converted XGBoost model can be used to reproduce the output of TMVA or GBRForest.

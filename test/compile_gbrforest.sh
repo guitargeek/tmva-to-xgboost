@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Compiling GBR Forest from CMSSW
+cmssw_version=CMSSW_12_0_1
 
 mkdir gbrforest
 
@@ -10,17 +11,17 @@ cd gbrforest
 
 mkdir src
 cd src
-wget https://raw.githubusercontent.com/cms-sw/cmssw/master/CondFormats/GBRForest/src/GBRTree.cc
-wget https://raw.githubusercontent.com/cms-sw/cmssw/master/CommonTools/MVAUtils/src/GBRForestTools.cc
-wget https://raw.githubusercontent.com/cms-sw/cmssw/master/CommonTools/MVAUtils/src/TMVAZipReader.cc
+wget -q https://raw.githubusercontent.com/cms-sw/cmssw/$cmssw_version/CondFormats/GBRForest/src/GBRTree.cc
+wget -q https://raw.githubusercontent.com/cms-sw/cmssw/$cmssw_version/CommonTools/MVAUtils/src/GBRForestTools.cc
+wget -q https://raw.githubusercontent.com/cms-sw/cmssw/$cmssw_version/CommonTools/MVAUtils/src/TMVAZipReader.cc
 cd ..
 
 mkdir include
 cd include
-wget https://raw.githubusercontent.com/cms-sw/cmssw/master/CommonTools/MVAUtils/interface/GBRForestTools.h
-wget https://raw.githubusercontent.com/cms-sw/cmssw/master/CommonTools/MVAUtils/interface/TMVAZipReader.h
-wget https://raw.githubusercontent.com/cms-sw/cmssw/master/CondFormats/GBRForest/interface/GBRForest.h
-wget https://raw.githubusercontent.com/cms-sw/cmssw/master/CondFormats/GBRForest/interface/GBRTree.h
+wget -q https://raw.githubusercontent.com/cms-sw/cmssw/$cmssw_version/CommonTools/MVAUtils/interface/GBRForestTools.h
+wget -q https://raw.githubusercontent.com/cms-sw/cmssw/$cmssw_version/CommonTools/MVAUtils/interface/TMVAZipReader.h
+wget -q https://raw.githubusercontent.com/cms-sw/cmssw/$cmssw_version/CondFormats/GBRForest/interface/GBRForest.h
+wget -q https://raw.githubusercontent.com/cms-sw/cmssw/$cmssw_version/CondFormats/GBRForest/interface/GBRTree.h
 cd ..
 
 cd ..
